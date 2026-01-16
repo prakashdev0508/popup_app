@@ -1,8 +1,10 @@
 package com.prakash0508.popup_app.overlay
 
+import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.content.pm.PackageManager
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 import com.facebook.react.bridge.*
@@ -39,6 +41,24 @@ class OverlayModule(private val reactContext: ReactApplicationContext) :
   @ReactMethod
   fun startOverlay(promise: Promise) {
     try {
+      val canDraw = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        Settings.canDrawOverlays(reactContext)
+      } else {
+        true
+      }
+      if (!canDraw) {
+        promise.reject("OVERLAY_PERMISSION_REQUIRED", "Overlay permission (Display over other apps) is not granted.")
+        return
+      }
+
+      if (Build.VERSION.SDK_INT >= 33) {
+        val granted = reactContext.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+          promise.reject("NOTIFICATION_PERMISSION_REQUIRED", "Notification permission is required to run the overlay foreground service on Android 13+.")
+          return
+        }
+      }
+
       // Remember user intent so we can restore later (e.g. after reboot).
       prefs().edit().putBoolean(OverlayStorage.KEY_OVERLAY_ENABLED, true).apply()
       val intent = Intent(reactContext, OverlayService::class.java)

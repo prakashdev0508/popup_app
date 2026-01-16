@@ -158,12 +158,24 @@ export default function DataScreen() {
       Overlay.requestPermission();
       return;
     }
-    await Overlay.start();
-    Alert.alert('Enabled', 'The floating bubble should now appear on top of other apps.');
+    try {
+      await Overlay.start();
+      Alert.alert('Enabled', 'The floating bubble should now appear on top of other apps.');
+    } catch (e: any) {
+      const msg =
+        typeof e?.message === 'string'
+          ? e.message
+          : 'Failed to start overlay. Please grant Overlay + Notification permissions and try again.';
+      Alert.alert('Start failed', msg);
+    }
   }, []);
 
   const stopBubble = useCallback(async () => {
-    await Overlay.stop();
+    try {
+      await Overlay.stop();
+    } catch {
+      // ignore
+    }
   }, []);
 
   return (
