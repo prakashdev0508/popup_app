@@ -24,6 +24,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="data"
+        options={{
+          title: 'Data',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="doc.on.doc.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="explore"
         options={{
           title: 'Explore',

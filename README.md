@@ -16,6 +16,49 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+## Floating overlay bubble (Android-only)
+
+This app includes an **Android foreground service** that draws a **floating bubble overlay** (`SYSTEM_ALERT_WINDOW`). When you tap the bubble, the app opens a **React Native bottom-sheet picker**; selecting an item copies its **value** to the clipboard.
+
+### Data model / storage
+
+- **Structure**: up to ~50 items of `{ id, label, value }`
+- **Storage**: `AsyncStorage` (`storage/saved-items.ts`)
+- **Overlay sync**: items are mirrored into native storage via `OverlayModule.setItems(...)` so the overlay can work while the app is backgrounded.
+
+### Permissions
+
+- **Draw over other apps**: requested via `OverlayModule.requestOverlayPermission()` (opens Android settings screen)
+- **Foreground service**: declared in Android manifest
+- **Notifications (Android 13+)**: requested at runtime so the foreground service can show its persistent notification
+
+### Run / build (native required)
+
+The overlay needs native code, so it **will not work in Expo Go**.
+
+- Local dev build (device/emulator required):
+
+```bash
+npx expo run:android
+```
+
+- Local APK build (no device required):
+
+```bash
+eas build --local --platform android --profile preview --clear-cache
+```
+
+The APK is written to `./build-*.apk`.
+
+### User flow
+
+1. User opens the app → adds items in the **Data** tab.
+2. User taps **Start bubble** → grants overlay permission.
+3. User opens any other app and taps an input field.
+4. User taps the floating bubble.
+5. The picker opens → user selects one item.
+6. The value is copied to clipboard → user manually pastes.
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
