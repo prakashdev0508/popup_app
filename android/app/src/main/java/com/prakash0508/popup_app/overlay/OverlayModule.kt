@@ -39,6 +39,8 @@ class OverlayModule(private val reactContext: ReactApplicationContext) :
   @ReactMethod
   fun startOverlay(promise: Promise) {
     try {
+      // Remember user intent so we can restore later (e.g. after reboot).
+      prefs().edit().putBoolean(OverlayStorage.KEY_OVERLAY_ENABLED, true).apply()
       val intent = Intent(reactContext, OverlayService::class.java)
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         ContextCompat.startForegroundService(reactContext, intent)
@@ -54,6 +56,7 @@ class OverlayModule(private val reactContext: ReactApplicationContext) :
   @ReactMethod
   fun stopOverlay(promise: Promise) {
     try {
+      prefs().edit().putBoolean(OverlayStorage.KEY_OVERLAY_ENABLED, false).apply()
       val intent = Intent(reactContext, OverlayService::class.java)
       reactContext.stopService(intent)
       promise.resolve(true)

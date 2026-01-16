@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  FlatList,
-  Modal,
-  PermissionsAndroid,
-  Platform,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
+    Alert,
+    FlatList,
+    Modal,
+    PermissionsAndroid,
+    Platform,
+    Pressable,
+    StyleSheet,
+    TextInput,
+    View,
 } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -24,6 +24,10 @@ async function ensurePostNotificationsPermission(): Promise<void> {
   if (Platform.OS !== 'android') return;
   if (Platform.Version < 33) return;
   try {
+    const already = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+    );
+    if (already) return;
     await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
   } catch {
     // ignore
@@ -132,6 +136,18 @@ export default function DataScreen() {
       return;
     }
     await ensurePostNotificationsPermission();
+    if (Platform.Version >= 33) {
+      const notifGranted = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+      );
+      if (!notifGranted) {
+        Alert.alert(
+          'Notification permission required',
+          'Allow notifications so the floating bubble can run as a foreground service. After granting, tap Start bubble again.'
+        );
+        return;
+      }
+    }
     const canDraw = await Overlay.checkPermission();
     setPermission(canDraw);
     if (!canDraw) {
@@ -164,6 +180,11 @@ export default function DataScreen() {
           <ThemedText style={styles.warning}>
             Native overlay module not loaded. You are likely running in Expo Go. Build/install a dev
             client with <ThemedText type="defaultSemiBold">npx expo run:android</ThemedText>.
+          </ThemedText>
+        ) : null}
+        {Platform.OS === 'android' && Platform.Version >= 33 ? (
+          <ThemedText style={styles.muted}>
+            Note: Android 13+ requires notification permission for the bubble to run.
           </ThemedText>
         ) : null}
         <ThemedText style={styles.muted}>

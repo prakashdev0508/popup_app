@@ -78,7 +78,14 @@ class OverlayService : Service() {
       .setOngoing(true)
       .build()
 
-    startForeground(1001, notification)
+    try {
+      startForeground(1001, notification)
+    } catch (_: SecurityException) {
+      // Most commonly on Android 13+ if POST_NOTIFICATIONS permission is denied.
+      stopSelf()
+    } catch (_: Exception) {
+      stopSelf()
+    }
   }
 
   private fun canDrawOverlays(): Boolean {
