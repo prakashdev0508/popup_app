@@ -8,6 +8,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
@@ -36,6 +37,12 @@ class OverlayService : Service() {
     windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
     startAsForeground()
     maybeShowBubble()
+  }
+
+  override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    // If Android recreates the service, ensure the bubble is visible again.
+    maybeShowBubble()
+    return START_STICKY
   }
 
   override fun onDestroy() {
@@ -89,7 +96,10 @@ class OverlayService : Service() {
     }
 
     val circle = FrameLayout(this).apply {
-      setBackgroundColor(Color.parseColor("#1E88E5"))
+      background = GradientDrawable().apply {
+        shape = GradientDrawable.OVAL
+        setColor(Color.parseColor("#1E88E5"))
+      }
       val pad = dp(10)
       setPadding(pad, pad, pad, pad)
       elevation = dp(6).toFloat()
@@ -157,25 +167,8 @@ class OverlayService : Service() {
   }
 
   private fun toggleSheet() {
-    // Instead of a native picker, trigger the React Native bottom-sheet UI via deep link.
-    openReactNativePicker()
-  }
-
-  private fun openReactNativePicker() {
-    try {
-      val intent = Intent(
-        Intent.ACTION_VIEW,
-        android.net.Uri.parse("popupapp://overlay-picker")
-      ).apply {
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        // Keep a single task and reuse MainActivity (it is singleTask).
-        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-      }
-      startActivity(intent)
-    } catch (_: Exception) {
-      // As a fallback, keep using the native sheet (older behavior).
-      showSheet()
-    }
+    // Show a native overlay sheet on top of other apps (does not bring app to foreground).
+    if (sheetRootView != null) removeSheet() else showSheet()
   }
 
   private fun showSheet() {
